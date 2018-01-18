@@ -21,6 +21,7 @@
             android:name=".service.SampleService"
             android:enabled="true"
             android:exported="true"></service>
+        <receiver android:name=".ReceiveActivity" android:process=":remote" />
     </application>
 
 </manifest>
