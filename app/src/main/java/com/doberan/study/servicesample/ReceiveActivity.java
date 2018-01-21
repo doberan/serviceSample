@@ -15,7 +15,7 @@ public class ReceiveActivity extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent)
     {
-        Log.i("ReceiveActivity", "onReceive");
+        Log.d("ReceiveActivity", "onReceive");
         Toast.makeText(context, "called ReceivedActivity", Toast.LENGTH_SHORT).show();
     }
 }

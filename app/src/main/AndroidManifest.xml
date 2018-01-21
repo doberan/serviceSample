@@ -20,8 +20,20 @@
         <service
             android:name=".service.SampleService"
             android:enabled="true"
+            android:exported="true" />
+
+        <receiver
+            android:name=".ReceiveActivity"
+            android:process=":remote" />
+
+        <service
+            android:name=".service.TestService"
+            android:enabled="true"
             android:exported="true"></service>
-        <receiver android:name=".ReceiveActivity" android:process=":remote" />
+
+        <receiver android:name=".service.AlarmBroadcastReceiver"
+            android:process=":remote" />
+
     </application>
 
 </manifest>
