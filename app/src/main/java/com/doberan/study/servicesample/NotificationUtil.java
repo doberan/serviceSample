@@ -11,8 +11,6 @@ import android.util.Log;
 import android.widget.Toast;
 
 /*
-* This software is contributed or developed by KYOCERA Corporation.
-* (C) 2018 KYOCERA Corporation
 */
 public class NotificationUtil extends BroadcastReceiver {
     private static NotificationManager notificationManager = null;

@@ -1,8 +1,6 @@
 package com.doberan.study.servicesample;
 
 /*
-* This software is contributed or developed by KYOCERA Corporation.
-* (C) 2018 KYOCERA Corporation
 */
 public class NotificationConstants {
 

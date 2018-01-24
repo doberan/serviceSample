@@ -4,8 +4,6 @@ import android.app.Application;
 import android.widget.Toast;
 
 /*
-* This software is contributed or developed by KYOCERA Corporation.
-* (C) 2018 KYOCERA Corporation
 */
 public class ApplicationController extends Application {
     private static ApplicationController sInstance;
