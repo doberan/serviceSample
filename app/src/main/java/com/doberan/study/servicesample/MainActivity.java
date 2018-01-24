@@ -7,6 +7,11 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.ServiceConnection;
+import android.os.IBinder;
+import android.os.Message;
+import android.os.Messenger;
+import android.os.RemoteException;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -19,50 +24,111 @@ import org.w3c.dom.Text;
 
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
-
-    TextView text;
+public class MainActivity extends AppCompatActivity implements ServiceConnection {
+    private Messenger messenger;
+    private TextView text;
+    private TextView sendText;
+    private TextView sendNotice;
+    private SampleService sampleService;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         text = (TextView)findViewById(R.id.hello_text);
+        sendText = (TextView)findViewById(R.id.sendText);
+        sendText.setText("send message");
+        sendText.setVisibility(View.INVISIBLE);
+        sendText.setClickable(true);
+        sendText.setOnClickListener(onSendClickListener);
+        sendNotice = (TextView)findViewById(R.id.send_notification);
+        sendNotice.setText("send notification");
+        sendNotice.setVisibility(View.INVISIBLE);
+        sendNotice.setClickable(true);
+        sendNotice.setOnClickListener(onSendClickListener);
         text.setClickable(true);
-
-        if(isActiveService("SampleService")) {
-            text.setText("Stop Service");
-        }else{
-            text.setText("Start Service");
-        }
-        text.setOnClickListener(onClickListener);
+        text.setText("Start Service");
+        text.setOnClickListener(onBindClickListener);
+        sampleService = new SampleService();
     }
 
-    View.OnClickListener onClickListener = new View.OnClickListener() {
+    View.OnClickListener onBindClickListener = new View.OnClickListener() {
         @Override
-        public void onClick(View v) {
+        public void onClick(View view) {
+            Toast.makeText(getApplicationContext(), "ボタンが押下されました", Toast.LENGTH_SHORT).show();
             if(text.getText().equals("Start Service")) {
-                startService(new Intent(MainActivity.this, SampleService.class));
-                text.setText("Stop Service");
+                sendText.setVisibility(View.VISIBLE);
+                sendNotice.setVisibility(View.VISIBLE);
+                connect(view);
             }else{
-                stopService(new Intent(MainActivity.this, SampleService.class));
-                text.setText("Start Service");
+                disConnected(view);
             }
         }
     };
 
-    public boolean isActiveService(String serviceClassName)
-    {
-        ActivityManager activityManager = (ActivityManager) this.getApplicationContext().getSystemService(ACTIVITY_SERVICE);
-        List<ActivityManager.RunningServiceInfo> runningServicesInfo = activityManager.getRunningServices(Integer.MAX_VALUE);
-
-        for (ActivityManager.RunningServiceInfo runningServiceInfo : runningServicesInfo)
-        {
-            if (runningServiceInfo.service.getClassName().equals(serviceClassName))
-            {
-                return true;
+    View.OnClickListener onSendClickListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            switch(v.getId()){
+                case R.id.sendText:
+                    sendText();
+                    break;
+                case R.id.send_notification:
+                    sendNotification();
+                    break;
             }
         }
+    };
 
-        return false;
+    @Override
+    public void onServiceConnected(ComponentName name, IBinder service) {
+        Toast.makeText(getApplicationContext(), "サービスに接続しました", Toast.LENGTH_SHORT).show();
+        messenger = new Messenger(service);
+    }
+
+    @Override
+    public void onServiceDisconnected(ComponentName name) {
+        Toast.makeText(getApplicationContext(), "サービスに切断しました", Toast.LENGTH_SHORT).show();
+        messenger = null;
+    }
+
+    public void connect(View view){
+        bindService(new Intent(getApplicationContext(), sampleService.getClass()),this,Context.BIND_AUTO_CREATE);
+        text.setText("Stop Service");
+    }
+
+    public void disConnected(View view){
+        unbindService(this);
+        text.setText("Start Service");
+        sendNotice.setVisibility(View.INVISIBLE);
+        sendText.setVisibility(View.INVISIBLE);
+    }
+
+    /**
+     * メッセージの送信
+     * @param
+     */
+    public void sendText() {
+        try {
+            // メッセージの送信
+            Toast.makeText(getApplicationContext(), "sendText()。", Toast.LENGTH_SHORT).show();
+            messenger.send(Message.obtain(null, SampleService.SEND_TEST, "message test"));
+        } catch (RemoteException e) {
+            e.printStackTrace();
+            Toast.makeText(getApplicationContext(), "メッセージの送信に失敗しました。", Toast.LENGTH_SHORT).show();
+        }
+    }
+        /**
+         * メッセージの送信
+         * @param
+         */
+    public void sendNotification() {
+        try {
+            Toast.makeText(getApplicationContext(), "sendNotification()。", Toast.LENGTH_SHORT).show();
+            // メッセージの送信
+            messenger.send(Message.obtain(null,SampleService.SEND_NOTIFICATION));
+        } catch (RemoteException e) {
+            e.printStackTrace();
+            Toast.makeText(getApplicationContext(), "メッセージの送信に失敗しました。", Toast.LENGTH_SHORT).show();
+        }
     }
 }
