@@ -20,27 +20,24 @@ import android.widget.Toast;
 
 import com.doberan.study.servicesample.service.SampleService;
 
-import org.w3c.dom.Text;
-
-import java.util.List;
-
 public class MainActivity extends AppCompatActivity implements ServiceConnection {
     private Messenger messenger;
     private TextView text;
     private TextView sendText;
     private TextView sendNotice;
     private SampleService sampleService;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        text = (TextView)findViewById(R.id.hello_text);
-        sendText = (TextView)findViewById(R.id.sendText);
+        text = (TextView) findViewById(R.id.hello_text);
+        sendText = (TextView) findViewById(R.id.sendText);
         sendText.setText("send message");
         sendText.setVisibility(View.INVISIBLE);
         sendText.setClickable(true);
         sendText.setOnClickListener(onSendClickListener);
-        sendNotice = (TextView)findViewById(R.id.send_notification);
+        sendNotice = (TextView) findViewById(R.id.send_notification);
         sendNotice.setText("send notification");
         sendNotice.setVisibility(View.INVISIBLE);
         sendNotice.setClickable(true);
@@ -55,12 +52,12 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
         @Override
         public void onClick(View view) {
             Toast.makeText(getApplicationContext(), "ボタンが押下されました", Toast.LENGTH_SHORT).show();
-            if(text.getText().equals("Start Service")) {
+            if (text.getText().equals("Start Service")) {
                 sendText.setVisibility(View.VISIBLE);
                 sendNotice.setVisibility(View.VISIBLE);
-                connect(view);
-            }else{
-                disConnected(view);
+                connect();
+            } else {
+                disConnected();
             }
         }
     };
@@ -68,7 +65,7 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
     View.OnClickListener onSendClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            switch(v.getId()){
+            switch (v.getId()) {
                 case R.id.sendText:
                     sendText();
                     break;
@@ -81,22 +78,22 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
 
     @Override
     public void onServiceConnected(ComponentName name, IBinder service) {
-        Toast.makeText(getApplicationContext(), "サービスに接続しました", Toast.LENGTH_SHORT).show();
+        Toast.makeText(getApplicationContext(), "アクティビティがサービスに接続しました", Toast.LENGTH_SHORT).show();
         messenger = new Messenger(service);
     }
 
     @Override
     public void onServiceDisconnected(ComponentName name) {
-        Toast.makeText(getApplicationContext(), "サービスに切断しました", Toast.LENGTH_SHORT).show();
+        Toast.makeText(getApplicationContext(), "アクティビティがサービスを切断しました", Toast.LENGTH_SHORT).show();
         messenger = null;
     }
 
-    public void connect(View view){
-        bindService(new Intent(getApplicationContext(), sampleService.getClass()),this,Context.BIND_AUTO_CREATE);
+    public void connect() {
+        bindService(new Intent(getApplicationContext(), sampleService.getClass()), this, Context.BIND_AUTO_CREATE);
         text.setText("Stop Service");
     }
 
-    public void disConnected(View view){
+    public void disConnected() {
         unbindService(this);
         text.setText("Start Service");
         sendNotice.setVisibility(View.INVISIBLE);
@@ -105,30 +102,40 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
 
     /**
      * メッセージの送信
+     *
      * @param
      */
     public void sendText() {
         try {
             // メッセージの送信
-            Toast.makeText(getApplicationContext(), "sendText()。", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(), "MainのsendText()。", Toast.LENGTH_SHORT).show();
             messenger.send(Message.obtain(null, SampleService.SEND_TEST, "message test"));
         } catch (RemoteException e) {
             e.printStackTrace();
             Toast.makeText(getApplicationContext(), "メッセージの送信に失敗しました。", Toast.LENGTH_SHORT).show();
         }
     }
-        /**
-         * メッセージの送信
-         * @param
-         */
+
+    /**
+     * メッセージの送信
+     *
+     * @param
+     */
     public void sendNotification() {
         try {
-            Toast.makeText(getApplicationContext(), "sendNotification()。", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(), "MainのsendNotification()。", Toast.LENGTH_SHORT).show();
             // メッセージの送信
-            messenger.send(Message.obtain(null,SampleService.SEND_NOTIFICATION));
+            messenger.send(Message.obtain(null, SampleService.SEND_NOTIFICATION));
         } catch (RemoteException e) {
             e.printStackTrace();
             Toast.makeText(getApplicationContext(), "メッセージの送信に失敗しました。", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Toast.makeText(getApplicationContext(), "MainのonDestroyです", Toast.LENGTH_SHORT).show();
+        disConnected();
     }
 }

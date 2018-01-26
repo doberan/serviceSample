@@ -3,12 +3,18 @@ package com.doberan.study.servicesample;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.job.JobService;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.icu.text.SimpleDateFormat;
+import android.icu.util.Calendar;
 import android.util.Log;
 import android.widget.Toast;
+import android.support.v4.app.JobIntentService;
+
+import com.doberan.study.servicesample.service.SampleService;
 
 /*
 */
@@ -19,13 +25,17 @@ public class NotificationUtil extends BroadcastReceiver {
 
     public static void updateSendNotification(){
         notificationManager = (NotificationManager) ApplicationController.getInstance().getSystemService(Context.NOTIFICATION_SERVICE);
+        // 現在時刻取得
+        android.icu.text.DateFormat date = new SimpleDateFormat("yyyy年MM月dd日 kk:mm 更新");
+        Calendar calendar = Calendar.getInstance();
+        String now = date.format(calendar.getTime());
         setNotificationChannel(
                 NotificationConstants.UPDATE_CHANNEL_ID,
                 NotificationConstants.UPDATE_CHANNEL_NAME,
                 NotificationManager.IMPORTANCE_DEFAULT
         );
         setLightColor(Color.BLUE);
-        String[] message = {NotificationConstants.NOTIFICATION_MESSAGE_DUMMY1, NotificationConstants.NOTIFICATION_MESSAGE_DUMMY2};
+        String[] message = {NotificationConstants.NOTIFICATION_MESSAGE_DUMMY1, now};
         setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
         boolean flag = createNotificationChannel();
         if(!flag){
@@ -48,9 +58,9 @@ public class NotificationUtil extends BroadcastReceiver {
      */
     private static void setNotificationChannel(String channelId, String channelName, int importance){
         notificationChannel = new NotificationChannel(
-                "CHANNEL_ID",
-                "CHANNEL_NAME",
-                NotificationManager.IMPORTANCE_DEFAULT
+                channelId,
+                channelName,
+                importance
         );
     }
 
@@ -97,9 +107,9 @@ public class NotificationUtil extends BroadcastReceiver {
         }
         try {
             notification = new Notification.Builder(context.getApplicationContext(), notificationChannel.getId())
-                    .setContentTitle(title)
-                    .setContentText(message[0])
-                    .setSubText(message[1])
+                    .setContentTitle(message[0])
+                    .setContentText(message[1])
+                    .setSubText(title)
                     .setSmallIcon(icon)
                     .setChannelId(notificationChannel.getId())
                     .build();
@@ -121,14 +131,19 @@ public class NotificationUtil extends BroadcastReceiver {
         if(notificationManager == null || notification == null){
             return false;
         }
-        notificationManager.notify(1,notification);
+        notificationManager.notify(R.string.app_name,notification);
         return true;
     }
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        Log.d("NotificationUtil", "onreceive!");
+        Log.d("NotificationUtil", "onReceive!");
         Toast.makeText(context.getApplicationContext(),"onReceiveです", Toast.LENGTH_SHORT).show();
+        setAlarmNotification(context);
         updateSendNotification();
+    }
+
+    public void setAlarmNotification(Context context){
+        SampleService.enqueueWork(context, new Intent(SampleService.SEND_NOTIFICATION_START));
     }
 }

@@ -1,46 +1,67 @@
 package com.doberan.study.servicesample.service;
 
 import android.app.AlarmManager;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.icu.text.SimpleDateFormat;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
+import android.support.annotation.NonNull;
 import android.util.Log;
 import android.widget.Toast;
+import android.support.v4.app.JobIntentService;
 
 import com.doberan.study.servicesample.ApplicationController;
 import com.doberan.study.servicesample.NotificationUtil;
 
+
 import java.util.Calendar;
 
-public class SampleService extends Service{
-    private String TAG = SampleService.class.getCanonicalName();
+public class SampleService extends JobIntentService {
+    private static String TAG = SampleService.class.getCanonicalName();
     private Messenger messenger;
+
+    static final int JOB_ID = 29298989;
+    public static final String SEND_NOTIFICATION_START = "SEND_NOTIFICATION";
+
+    public static void enqueueWork(Context context, Intent work) {
+        Toast.makeText(context, "enqueueWorkです："+ work.getAction(), Toast.LENGTH_SHORT).show();
+        Log.d(TAG, "enqueueWork: work.getAction() = " + work.getAction());
+        enqueueWork(context, SampleService.class, JOB_ID, work);
+    }
+
+    @Override
+    protected void onHandleWork(@NonNull Intent intent) {
+        Toast.makeText(getApplicationContext(), "onHandleWorkです："+ intent.getAction(), Toast.LENGTH_SHORT).show();
+        String action = intent.getAction();
+        if(action.equals(SEND_NOTIFICATION)){
+            sendNotification();
+        }
+    }
 
     public static final int SEND_TEST = 0;
     public static final int SEND_NOTIFICATION = 1;
 
 
-    static class TestHandler extends Handler{
+    class TestHandler extends Handler {
         private Context context;
-        public TestHandler(Context context){
+
+        public TestHandler(Context context) {
             this.context = context;
         }
 
         @Override
         public void handleMessage(Message msg) {
-            switch(msg.what){
+            switch (msg.what) {
                 case SEND_TEST:
-                    Toast.makeText(context,(String)msg.obj,Toast.LENGTH_SHORT).show();
+                    Toast.makeText(context, (String) msg.obj, Toast.LENGTH_SHORT).show();
                     break;
                 case SEND_NOTIFICATION:
-                    Toast.makeText(context,"send_notification handle",Toast.LENGTH_SHORT).show();
+                    Toast.makeText(context, "send_notification handle", Toast.LENGTH_SHORT).show();
                     sendNotification();
                     break;
                 default:
@@ -92,25 +113,40 @@ public class SampleService extends Service{
         return super.onUnbind(intent);
     }
 
-    public static void sendNotification(){
-        Toast.makeText(ApplicationController.getInstance().getApplicationContext(), "サービスのonStartCommandです", Toast.LENGTH_SHORT).show();
+    public void sendNotification() {
+        Toast.makeText(ApplicationController.getInstance().getApplicationContext(), "サービスのsendNotification", Toast.LENGTH_SHORT).show();
         Log.d("SampleService", "sneNotification");
         // 時間をセットする
-        Calendar calendar = Calendar.getInstance();
-        // Calendarを使って現在の時間をミリ秒で取得
-        calendar.setTimeInMillis(System.currentTimeMillis());
-        // 5秒後に設定
-        calendar.add(Calendar.SECOND, 5);
+        Calendar calendar = setAlarm(10);
+
         //明示的なBroadCast
-        Intent newintent = new Intent(ApplicationController.getInstance().getApplicationContext(),
-                NotificationUtil.class);
-        PendingIntent pending = PendingIntent.getBroadcast(
-                ApplicationController.getInstance().getApplicationContext(), 0, newintent, 0);
+        Intent intent = new Intent(ApplicationController.getInstance().getApplicationContext(), NotificationUtil.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(ApplicationController.getInstance().getApplicationContext(), 0, intent, 0);
 
         // アラームをセットする
         AlarmManager am = (AlarmManager) ApplicationController.getInstance().getSystemService(ALARM_SERVICE);
-        if(am != null) {
-            am.setExact(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pending);
+        if (am != null) {
+            am.setExact(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
         }
+    }
+
+    public Calendar setAlarm(int setTime){
+        Calendar calendar = Calendar.getInstance();
+        // Calendarを使って現在の時間をミリ秒で取得
+        calendar.setTimeInMillis(System.currentTimeMillis());
+        // 10秒後に設定
+        calendar.add(Calendar.SECOND, setTime);
+
+        android.icu.text.DateFormat date = new SimpleDateFormat("yyyy年MM月dd日 kk:mm セット");
+        String setTimeString = date.format(calendar.getTime());
+        Toast.makeText(ApplicationController.getInstance().getApplicationContext(), setTimeString, Toast.LENGTH_SHORT).show();
+        return calendar;
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        Toast.makeText(ApplicationController.getInstance().getApplicationContext(), "レシーバーからサービス開始しました", Toast.LENGTH_SHORT).show();
+        sendNotification();
+        return super.onStartCommand(intent, flags, startId);
     }
 }

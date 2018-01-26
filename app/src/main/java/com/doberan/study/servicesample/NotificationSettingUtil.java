@@ -4,10 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
-/*
-* This software is contributed or developed by KYOCERA Corporation.
-* (C) 2018 KYOCERA Corporation
-*/
+
 public class NotificationSettingUtil {
     // 通知設定トグル変数
     private static boolean allowNotification;
